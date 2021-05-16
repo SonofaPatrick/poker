@@ -1,8 +1,7 @@
 import random
 import collections
 
-# sdfk02k403fk2
-#asdasd
+# a
 
 SIX_HANDS = []
 PLAYER_LIST = []
