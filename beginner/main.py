@@ -3,6 +3,7 @@ import collections
 
 # sdfk02k403fk2
 
+
 SIX_HANDS = []
 PLAYER_LIST = []
 if len(PLAYER_LIST) > 6:
