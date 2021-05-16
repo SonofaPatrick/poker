@@ -123,7 +123,7 @@ def next_turn():
     # shuffle that bitch twice
     n.deal_hands()
 
-
+# poop
 
 
 
