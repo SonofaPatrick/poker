@@ -2,7 +2,7 @@ import random
 import collections
 
 # sdfk02k403fk2
-
+#asdasd
 
 SIX_HANDS = []
 PLAYER_LIST = []
@@ -17,7 +17,7 @@ class Deck(object):
                     '2h', '3h', '4h', '5h', '6h', '7h', '8h', '9h', '10h', 'Jh', 'Qh', 'Kh', 'Ah']
 
     def __init__(self, deck):
-        self.six_hands
+        self.six_hands =[]
         self.current = deck
         self.hand = []
         self.flop = []
