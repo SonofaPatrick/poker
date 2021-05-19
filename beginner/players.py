@@ -11,6 +11,8 @@ class Player:
         self.position = position
         self.turn = False
         self.bet = 0
+        self.bet_current = 0
+        self.bet_memory = 0
         Player.player_list.append(self)
 
     def change_position(self):
@@ -24,13 +26,13 @@ class Player:
         if action == 'c':
             called_chips = their_bet - my_bet
             self.bet = self.bet + called_chips
-            self.chips = self.chips - called_chips
+            # self.chips = self.chips - called_chips
             print(f'{self.name} called')
         elif action == 'r':
-            r = int(input(f'{self.name}\nEnter raise: '))
-            self.bet = self.bet + r
-            self.chips = self.chips - r
-            print(f'{self.name} raises ${r}')
+            self.bet_current = int(input(f'{self.name}\nEnter raise: '))
+            self.bet = self.bet + self.bet_current
+            # self.chips = self.chips - self.bet_current
+            print(f'{self.name} raises ${self.bet_current}')
         elif action == 'f':
             pass
             # fold()
@@ -42,15 +44,46 @@ class Player:
             pass
             # check()
         elif action == 'b':
-            b = int(input(f'{self.name}\nEnter bet: '))
-            self.bet = self.bet + b
-            self.chips = self.chips - b
-            print(f'{self.name} bets ${b}')
+            self.bet_current = int(input(f'{self.name}\nEnter bet: '))
+            self.bet = self.bet + self.bet_current
+            # self.chips = self.chips - self.bet_current
+            print(f'{self.name} bets ${self.bet_current}')
         elif action == 'f':
             pass
             # fold()
         else:
             print('Incorrect input. Try (c/b/f)')
+
+
+def bet_memory():
+    for player in Player.player_list:
+        player.bet_memory += player.bet
+
+
+def turn_order(player):
+    if player.position == 'Dealer':
+        player.turn = True
+    else:
+        player.turn = False
+
+
+def change_position():
+    for player in Player.player_list:
+        if player.position == 'Dealer':
+            player.position = 'Big Blind'
+        elif player.position == 'Big Blind':
+            player.position = 'Dealer'
+        print(f'{player.name} is {player.position}')
+
+
+def display_chips():
+    for player in Player.player_list:
+        print(f"{player.name}'s chips: ${player.chips}")
+
+
+def display_players():
+    for player in Player.player_list:
+        print(f"\n{player.name}\n{str(player.hand)}\n{player.position}: ${player.bet}\n${player.chips - player.bet}")
 
 
 def player_names():

@@ -2,6 +2,7 @@ from beginner.deck import *
 from beginner.players import *
 import time
 
+
 class Game:
     sb = 1
     bb = 2
@@ -11,6 +12,7 @@ class Game:
         self.pot = 0
         self.total_bet = 0
         self.breaker = 0
+        self.stage = 0
 
     def update_bet(self, bet1, bet2):
         self.total_bet = bet1 + bet2
@@ -33,13 +35,18 @@ def set_blinds(small_blind, big_blind):
 
 
 def game_round():
+    while_break = 0
     while g.round:
         g.breaker = 0
+        if while_break == 1:
+            return
         for i in a:
             i.turn = True
             i_current = a.index(i) - 1
             i2 = a[i_current]
-
+            # TODO may need to overhaul the turn based system. its kinda retarded
+            # need to make a way for the positions to rotate after a hand ends, and then always start on Dealer
+            # might be worth it to do a rewrite
             if i.turn:
 
                 if i.bet < i2.bet:
@@ -47,20 +54,28 @@ def game_round():
 
                     if action == 'f':
                         print(f'{i.name} folds')
-                        i2.chips += i2.bet - i.bet
-                        g.pot += g.total_bet - (i2.bet - i.bet)
-                        print(f'{i2.name} wins ${g.pot}')
+                        g.update_bet(i.bet, i2.bet)
+                        g.update_pot()
+                        bet_memory()
+                        print(f'{i2.name} takes ${g.pot} pot, profits ${i.bet_memory}')
+                        i.chips -= i.bet
+                        i2.chips -= i2.bet
                         i2.chips += g.pot
+                        display_chips()
                         g.breaker = 4
-                        break
+                        return
 
                     elif action == 'c':
                         i.call_raise_fold(action, i.bet, i2.bet)
                         g.update_bet(i.bet, i2.bet)
                         print(f'Total bets: ${g.total_bet}')
                         if not i2.turn:
+                            # TODO don't use player.turn for this, make a new variable
                             continue
                         elif i.bet == i2.bet:
+                            i.chips -= i.bet
+                            i2.chips -= i.bet
+                            bet_memory()
                             break
 
                     else:
@@ -76,6 +91,9 @@ def game_round():
                         if not i2.turn:
                             continue
                         else:
+                            i.chips -= i.bet
+                            i2.chips -= i2.bet
+                            bet_memory()
                             break
                     # TODO update this fold statement
                     elif action == 'f':
@@ -87,7 +105,8 @@ def game_round():
                         i.check_bet_fold(action)
                     g.update_bet(i.bet, i2.bet)
                     print(f'Total bets: ${g.total_bet}')
-
+            else:
+                break
             # i.turn = False
         else:
             continue
@@ -120,13 +139,17 @@ if __name__ == '__main__':
     # TODO fix the pre-flop fold
     # TODO work on the game loop
     while g.round:
+        if Player.player_list[0].position == 'Dealer':
+            pass
+
         num_rounds = 0
         while g.round:
             g.breaker = 0
             num_rounds += 1
-            print(num_rounds)
+            print(f'\nRound: {num_rounds}')
             if num_rounds > 1:
                 d = Deck()
+                change_position()
                 print(f'Cards in Deck: {len(d.current)}')
                 d.shuffle()
                 print('Shuffling...')
@@ -137,57 +160,61 @@ if __name__ == '__main__':
             for stage in range(4):
                 stage += g.breaker
                 if stage == 0:
+                    print(f'{p2.chips}')
+                    g.total_bet = 0
                     g.pot = 0
                     p1.bet, p2.bet = 0, 0
+
                     for i in a:
                         if i.position == 'Dealer':
-                            i.chips = i.chips - Game.sb
                             i.bet = i.bet + Game.sb
                         else:
-                            i.chips = i.chips - Game.bb
                             i.bet = i.bet + Game.bb
                     g.update_bet(p2.bet, p1.bet)
-                    g.update_pot()
+
                     print('\n__Pre-flop__')
-                    print(f'\n{p1.name}\n{str(p1.hand)}\n{p1.position}: ${p1.bet}\n${p1.chips}')
-                    print(f'\n{p2.name}\n{str(p2.hand)}\n{p2.position}: ${p2.bet}\n${p2.chips}')
-                    print(f'\nPot: ${g.pot}')
+                    display_players()
+                    print(f'\nPot: ${g.total_bet}')
+
                 elif stage == 1:
                     p1.turn, p2.turn = False, False
                     d.deal_flop()
                     g.pot = g.total_bet
                     p1.bet, p2.bet = 0, 0
+
                     print('__Flop__')
                     print(d.flop)
                     g.update_bet(p1.bet, p2.bet)
-                    print(f'\n{p1.name}\n{str(p1.hand)}\n{p1.position}: ${p1.bet}\n${p1.chips}')
-                    print(f'\n{p2.name}\n{str(p2.hand)}\n{p2.position}: ${p2.bet}\n${p2.chips}')
+
+                    display_players()
                     print(f'\nPot: ${g.pot}')
-                    x = input('Start post-flop')
+
                 elif stage == 2:
                     p1.turn, p2.turn = False, False
                     d.burn1_deal1()
                     g.update_pot()
                     p1.bet, p2.bet = 0, 0
+
                     print('__Turn__')
                     print(d.flop)
                     g.update_bet(p1.bet, p2.bet)
-                    print(f'\n{p1.name}\n{str(p1.hand)}\n{p1.position}: ${p1.bet}\n${p1.chips}')
-                    print(f'\n{p2.name}\n{str(p2.hand)}\n{p2.position}: ${p2.bet}\n${p2.chips}')
+
+                    display_players()
                     print(f'\nPot: ${g.pot}')
-                    x = input('Start turn')
+
                 elif stage == 3:
                     p1.turn, p2.turn = False, False
                     d.burn1_deal1()
                     g.update_pot()
                     p1.bet, p2.bet = 0, 0
+
                     print('__River__')
                     print(d.flop)
                     g.update_bet(p1.bet, p2.bet)
-                    print(f'\n{p1.name}\n{str(p1.hand)}\n{p1.position}: ${p1.bet}\n${p1.chips}')
-                    print(f'\n{p2.name}\n{str(p2.hand)}\n{p2.position}: ${p2.bet}\n${p2.chips}')
+
+                    display_players()
                     print(f'\nPot: ${g.pot}')
-                    x = input('Start River')
+
                 elif stage > 3:
                     break
                 game_round()
