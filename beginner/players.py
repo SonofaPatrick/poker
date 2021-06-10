@@ -10,9 +10,19 @@ class Player:
         self.hand = hand
         self.position = position
         self.turn = False
+
         self.bet = 0
         self.bet_current = 0
         self.bet_memory = 0
+        self.action_memory = False
+
+        self.flop_hand = None
+        self.rank_count = None
+        self.pairs = None
+        self.hierarchy = {10: False, 9: False, 8: False, 7: False, 6: False,
+                          5: False, 4: False, 3: False, 2: False, 1: True}
+        self.highest_hand = None
+
         Player.player_list.append(self)
 
     def change_position(self):

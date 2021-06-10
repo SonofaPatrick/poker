@@ -1,6 +1,13 @@
 from beginner.deck import *
 from beginner.players import *
 import time
+from beginner.pairtest import *
+from beginner.flush import *
+from beginner.straight import *
+from beginner.cardreader import *
+from beginner.straightflush import *
+from highcard import high_cards
+from hierdict import highest_hand
 
 
 class Game:
@@ -42,11 +49,9 @@ def game_round():
             return
         for i in a:
             i.turn = True
+            i.action_memory = True
             i_current = a.index(i) - 1
             i2 = a[i_current]
-            # TODO may need to overhaul the turn based system. its kinda retarded
-            # need to make a way for the positions to rotate after a hand ends, and then always start on Dealer
-            # might be worth it to do a rewrite
             if i.turn:
 
                 if i.bet < i2.bet:
@@ -69,8 +74,7 @@ def game_round():
                         i.call_raise_fold(action, i.bet, i2.bet)
                         g.update_bet(i.bet, i2.bet)
                         print(f'Total bets: ${g.total_bet}')
-                        if not i2.turn:
-                            # TODO don't use player.turn for this, make a new variable
+                        if not i2.action_memory:
                             continue
                         elif i.bet == i2.bet:
                             i.chips -= i.bet
@@ -88,7 +92,7 @@ def game_round():
 
                     if action == 'c':
                         print(f'{i.name} checks')
-                        if not i2.turn:
+                        if not i2.action_memory:
                             continue
                         else:
                             i.chips -= i.bet
@@ -105,8 +109,7 @@ def game_round():
                         i.check_bet_fold(action)
                     g.update_bet(i.bet, i2.bet)
                     print(f'Total bets: ${g.total_bet}')
-            else:
-                break
+
             # i.turn = False
         else:
             continue
@@ -144,6 +147,8 @@ if __name__ == '__main__':
 
         num_rounds = 0
         while g.round:
+            p1.turn, p2.turn = False, False
+            p1.action_memory, p2.action_memory = False, False
             g.breaker = 0
             num_rounds += 1
             print(f'\nRound: {num_rounds}')
@@ -157,7 +162,7 @@ if __name__ == '__main__':
                 d.deal_hands()
                 p1.hand = d.two_hands[0]
                 p2.hand = d.two_hands[1]
-            for stage in range(4):
+            for stage in range(5):
                 stage += g.breaker
                 if stage == 0:
                     print(f'{p2.chips}')
@@ -177,6 +182,7 @@ if __name__ == '__main__':
                     print(f'\nPot: ${g.total_bet}')
 
                 elif stage == 1:
+                    p1.action_memory, p2.action_memory = False, False
                     p1.turn, p2.turn = False, False
                     d.deal_flop()
                     g.pot = g.total_bet
@@ -190,6 +196,7 @@ if __name__ == '__main__':
                     print(f'\nPot: ${g.pot}')
 
                 elif stage == 2:
+                    p1.action_memory, p2.action_memory = False, False
                     p1.turn, p2.turn = False, False
                     d.burn1_deal1()
                     g.update_pot()
@@ -203,6 +210,7 @@ if __name__ == '__main__':
                     print(f'\nPot: ${g.pot}')
 
                 elif stage == 3:
+                    p1.action_memory, p2.action_memory = False, False
                     p1.turn, p2.turn = False, False
                     d.burn1_deal1()
                     g.update_pot()
@@ -216,5 +224,70 @@ if __name__ == '__main__':
                     print(f'\nPot: ${g.pot}')
 
                 elif stage > 3:
+                    # d.flop = flop
+                    # p1.hand, p2.hand
+                    for player in Player.player_list:
+                        player.flop_hand = play_copy(d.flop, player.hand)
+                        player.rank_count = rank2count(player.flop_hand)
+                        player.pairs = pair_type(player.rank_count)
+
+                    for player in Player.player_list:
+
+                        straight_flush = check_straight_flush(player.flop_hand)
+                        four_of_a_kind, q_high = quads(player.pairs)
+                        full_house, full_house_dict = check_full_house(player.pairs)
+                        flush, suit, f_high, card_dict = check_flush(player.flop_hand)
+                        straight, s_high = check_straight(player.flop_hand)
+                        three_of_a_kind, trip_mem = trips(player.pairs)
+                        two_pairs, two_mem = two_pair(player.pairs)
+                        one_p, one_high = one_pair(player.pairs)
+
+                        if straight_flush:
+                            player.hierarchy[9] = True
+
+                        elif four_of_a_kind:
+                            player.hierarchy[8] = True
+
+                        elif full_house:
+                            player.hierarchy[7] = True
+
+                        elif flush:
+                            player.hierarchy[6] = True
+
+                        elif straight:
+                            player.hierarchy[5] = True
+
+                        elif three_of_a_kind:
+                            player.hierarchy[4] = True
+
+                        elif two_pairs:
+                            player.hierarchy[3] = True
+
+                        elif one_p:
+                            player.hierarchy[2] = True
+
+                        player.highest_hand = highest_hand(player.hierarchy)
+
+                    if p1.highest_hand > p2.highest_hand:
+                        # TODO this chip update method is shoddy
+                        p1.chips += g.pot
+                        g.pot = 0
+                    elif p2.highest_hand > p1.highest_hand:
+                        p2.chips += g.pot
+                        g.pot = 0
+                    elif p1.highest_hand == p2.highest_hand:
+                        if p1.highest_hand == 1:
+                            # TODO need to cover all the high card draws
+                            high_card = high_cards(p1.flop_hand, p2.flop_hand)
+                            if high_card == 'p1':
+                                p1.chips += g.pot
+                                g.pot = 0
+                            elif high_card == 'p2':
+                                p2.chips += g.pot
+                                g.pot = 0
+                            elif high_card == 'draw':
+                                pass
+                            # TODO make a draw work
+                    # TODO make a display for the winner
                     break
                 game_round()
